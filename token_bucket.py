@@ -1,43 +1,33 @@
+from collections import defaultdict
+import time
 
 
-# Global variables to store the token bucket state
-from datetime import time
-from typing import Dict, Tuple
+# Token Bucket Class
+class TokenBucket:
+    def __init__(self, max_tokens: int, refill_rate: float):
+        """
+        :param max_tokens: Maximum number of tokens the bucket can hold.
+        :param refill_rate: Number of tokens added per second.
+        """
+        self.max_tokens = max_tokens
+        self.tokens = max_tokens
+        self.refill_rate = refill_rate
+        self.last_refill_time = time.time()
 
+    def consume(self, tokens: int = 1) -> bool:
+        """
+        Attempt to consume tokens from the bucket.
+        :param tokens: Number of tokens to consume.
+        :return: True if tokens were consumed, False otherwise.
+        """
+        # Refill tokens based on elapsed time
+        current_time = time.time()
+        elapsed_time = current_time - self.last_refill_time
+        self.tokens = min(self.max_tokens, self.tokens + elapsed_time * self.refill_rate)
+        self.last_refill_time = current_time
 
-token_buckets: Dict[str, Tuple[float, int]] = {}  # {client_ip: (last_refill_time, tokens)}
-
-# Token bucket parameters
-TOKEN_RATE = 1  # Tokens added per second
-BUCKET_CAPACITY = 10  # Maximum tokens in the bucket
-
-def refill_tokens(client_ip: str) -> int:
-    """
-    Refill the token bucket for a client based on the elapsed time.
-    """
-    current_time = time.time()
-    last_refill_time, tokens = token_buckets.get(client_ip, (current_time, BUCKET_CAPACITY))
-
-    # Calculate the time elapsed since the last refill
-    elapsed_time = current_time - last_refill_time
-
-    # Add tokens based on the elapsed time and token rate
-    new_tokens = elapsed_time * TOKEN_RATE
-    tokens = min(tokens + new_tokens, BUCKET_CAPACITY)
-
-    # Update the last refill time and token count
-    token_buckets[client_ip] = (current_time, tokens)
-
-    return int(tokens)
-
-def consume_token(client_ip: str) -> bool:
-    """
-    Consume a token from the bucket for a client.
-    Returns True if a token is available, False otherwise.
-    """
-    tokens = refill_tokens(client_ip)
-
-    if tokens >= 1:
-        token_buckets[client_ip] = (token_buckets[client_ip][0], tokens - 1)
-        return True
-    return False
+        # Check if there are enough tokens
+        if self.tokens >= tokens:
+            self.tokens -= tokens
+            return True
+        return False
