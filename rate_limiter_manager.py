@@ -3,31 +3,30 @@ from collections import defaultdict
 from token_bucket import TokenBucket
 
 
-class RateLimiter:
+class RaterLimiterTypes:
+    bucket = None
+    def __init__(self, bucket_name: str, max_tokens: int, refill_rate: float):
+        self.bucket_name = bucket_name
+        self.bucket = TokenBucket(max_tokens, refill_rate)
+
+    def get_main_bucket(self):
+        return self.bucket
+        
+class GlobalRateLimiter(RaterLimiterTypes):
+    bucket_name = "global"
+    max_tokens = 2 
+    refill_rate = 1
     def __init__(self):
-        self.buckets = defaultdict(lambda: {})
+        super().__init__(self.bucket_name, self.max_tokens, self.refill_rate)      
 
-    def get_bucket(self, bucket_type: str, key: str, max_tokens: int, refill_rate: float) -> TokenBucket:
-        """
-        Get or create a token bucket for a specific type and key.
-        :param bucket_type: Type of bucket (e.g., "user", "api", "ip").
-        :param key: Unique identifier for the bucket (e.g., user ID, IP address).
-        :param max_tokens: Maximum tokens for the bucket.
-        :param refill_rate: Refill rate for the bucket.
-        :return: TokenBucket instance.
-        """
-        if key not in self.buckets[bucket_type]:
-            self.buckets[bucket_type][key] = TokenBucket(max_tokens, refill_rate)
-        return self.buckets[bucket_type][key]
+class IpRateLimiter(RaterLimiterTypes):
+    bucket_name = "ip"
+    max_tokens = 2 
+    refill_rate = 0.001
+    def __init__(self):
+        super().__init__(self.bucket_name, self.max_tokens, self.refill_rate)   
 
-    def check_limit(self, bucket_type: str, key: str, max_tokens: int, refill_rate: float) -> bool:
-        """
-        Check if a request is allowed based on the token bucket.
-        :param bucket_type: Type of bucket.
-        :param key: Unique identifier for the bucket.
-        :param max_tokens: Maximum tokens for the bucket.
-        :param refill_rate: Refill rate for the bucket.
-        :return: True if allowed, False otherwise.
-        """
-        bucket = self.get_bucket(bucket_type, key, max_tokens, refill_rate)
-        return bucket.consume()
+
+
+
+    

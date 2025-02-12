@@ -25,9 +25,12 @@ class TokenBucket:
         elapsed_time = current_time - self.last_refill_time
         self.tokens = min(self.max_tokens, self.tokens + elapsed_time * self.refill_rate)
         self.last_refill_time = current_time
-
+        print("TOKEN IN BUCKT ", self.tokens)
         # Check if there are enough tokens
         if self.tokens >= tokens:
             self.tokens -= tokens
             return True
         return False
+    
+    
+    
